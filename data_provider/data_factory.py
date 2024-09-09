@@ -1,7 +1,7 @@
 from data_provider.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Solar, Dataset_PEMS, \
     Dataset_Pred
 
-from data_provider.stock_data_loader import Dataset_Stock_Price
+from data_provider.stock_data_loader import Dataset_Stock_Price, Dataset_Stock_UpOrDown
 from torch.utils.data import DataLoader
 
 data_dict = {
@@ -12,7 +12,8 @@ data_dict = {
     'Solar': Dataset_Solar,
     'PEMS': Dataset_PEMS,
     'custom': Dataset_Custom,
-    'stock_predict_price': Dataset_Stock_Price
+    'stock_predict_price': Dataset_Stock_Price,
+    'stock_predict_upordown': Dataset_Stock_UpOrDown
 }
 
 
@@ -39,6 +40,8 @@ def data_provider(args, flag):
 
 
     if args.data == "stock_predict_price":
+        data_set = Data(root_path=args.root_path, data_config_file=args.data_config_file, flag=flag, size=[args.seq_len, args.label_len, args.pred_len], features=args.features)
+    elif args.data == "stock_predict_upordown":
         data_set = Data(root_path=args.root_path, data_config_file=args.data_config_file, flag=flag, size=[args.seq_len, args.label_len, args.pred_len], features=args.features)
     else:
         data_set = Data(
