@@ -15,5 +15,8 @@ pip install -r requirements.txt
 ```
 # predict stock price with iTransformer
 bash ./scripts/stock/iTransformer_predict_price.sh
+
+# predict stock price with Vanilla Transformer
+bash ./scripts/stock/Transformer_predict_price.sh
 ```
 
