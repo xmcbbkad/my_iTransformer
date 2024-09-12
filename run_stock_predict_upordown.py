@@ -34,6 +34,8 @@ if __name__ == '__main__':
     parser.add_argument('--seq_len', type=int, default=96, help='input sequence length')
     parser.add_argument('--label_len', type=int, default=48, help='start token length') # no longer needed in inverted Transformers
     parser.add_argument('--pred_len', type=int, default=96, help='prediction sequence length')
+    parser.add_argument('--num_classes', type=int, default=2, help='number of classes, for classify')
+    parser.add_argument('--num_features', type=int, default=4, help='number of input features')
 
     # model define
     parser.add_argument('--enc_in', type=int, default=7, help='encoder input size')

@@ -301,6 +301,6 @@ if __name__ == "__main__":
     #add_upordown_feature(input_file, output_file)
     
     
-    input_dir = "/my_iTransformer/dataset/stock/taobao/"
-    output_dir = "/my_iTransformer/dataset/stock/taobao_0.5_up_or_down/"
+    input_dir = "/my_iTransformer/dataset/stock/all/TSLA/2024"
+    output_dir = "/my_iTransformer/dataset/stock/all_0.5_up_or_down/TSLA/2024"
     add_upordown_feature_to_all(input_dir, output_dir)

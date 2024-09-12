@@ -15,7 +15,8 @@ class Model(nn.Module):
     def __init__(self, configs):
         super(Model, self).__init__()
         self.seq_len = configs.seq_len
-        self.pred_len = configs.pred_len
+        self.num_classes = configs.num_classes
+        self.num_features = configs.num_features
         self.output_attention = configs.output_attention
         self.use_norm = configs.use_norm
         # Embedding
@@ -37,9 +38,11 @@ class Model(nn.Module):
             ],
             norm_layer=torch.nn.LayerNorm(configs.d_model)
         )
-        self.projector = nn.Linear(configs.d_model, configs.pred_len, bias=True)
+        #self.projector = nn.Linear(configs.d_model, configs.pred_len, bias=True)
+        self.projector = nn.Linear(configs.d_model*configs.num_features , configs.num_classes, bias=True)
 
     def forecast(self, x_enc, x_mark_enc, x_dec, x_mark_dec):
+        #import pdb; pdb.set_trace()
         if self.use_norm:
             # Normalization from Non-stationary Transformer
             means = x_enc.mean(1, keepdim=True).detach()
@@ -51,6 +54,7 @@ class Model(nn.Module):
         # B: batch_size;    E: d_model; 
         # L: seq_len;       S: pred_len;
         # N: number of variate (tokens), can also includes covariates
+        # NC: number of classes
 
         # Embedding
         # B L N -> B N E                (B L N -> B L E in the vanilla Transformer)
@@ -60,17 +64,25 @@ class Model(nn.Module):
         # the dimensions of embedded time series has been inverted, and then processed by native attn, layernorm and ffn modules
         enc_out, attns = self.encoder(enc_out, attn_mask=None)
 
+        # B N E -> B N*E
+        enc_out = enc_out.view(enc_out.size(0), -1)
+        
+        # B N*E -> B NC
+        dec_out = self.projector(enc_out)
+        dec_out.type(torch.LongTensor) 
         # B N E -> B N S -> B S N 
-        dec_out = self.projector(enc_out).permute(0, 2, 1)[:, :, :N] # filter the covariates
+        #dec_out = self.projector(enc_out).permute(0, 2, 1)[:, :, :N] # filter the covariates
+        
 
-        if self.use_norm:
-            # De-Normalization from Non-stationary Transformer
-            dec_out = dec_out * (stdev[:, 0, :].unsqueeze(1).repeat(1, self.pred_len, 1))
-            dec_out = dec_out + (means[:, 0, :].unsqueeze(1).repeat(1, self.pred_len, 1))
+        #if self.use_norm:
+        #    # De-Normalization from Non-stationary Transformer
+        #    dec_out = dec_out * (stdev[:, 0, :].unsqueeze(1).repeat(1, self.pred_len, 1))
+        #    dec_out = dec_out + (means[:, 0, :].unsqueeze(1).repeat(1, self.pred_len, 1))
 
         return dec_out
 
 
     def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec, mask=None):
         dec_out = self.forecast(x_enc, x_mark_enc, x_dec, x_mark_dec)
-        return dec_out[:, -self.pred_len:, :]  # [B, L, D]
+        #return dec_out[:, -self.pred_len:, :]  # [B, L, D]
+        return dec_out
