@@ -33,7 +33,8 @@ class Exp_Stock_predict_upordown(Exp_Basic):
         return model_optim
 
     def _select_criterion(self):
-        criterion = nn.MSELoss()
+        #criterion = nn.MSELoss()
+        criterion = nn.CrossEntropyLoss()
         return criterion
 
     def vali(self, vali_data, vali_loader, criterion):
@@ -43,16 +44,17 @@ class Exp_Stock_predict_upordown(Exp_Basic):
             #for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(vali_loader):
             for i, (batch_x, batch_y) in enumerate(vali_loader):
                 batch_x = batch_x.float().to(self.device)
-                batch_y = batch_y.float().to(self.device)
-                
+                #batch_y = batch_y.float().to(self.device)
+                batch_y = batch_y.long().to(self.device)
                 batch_x_mark = None
                 batch_y_mark = None
                 #batch_x_mark = batch_x_mark.float().to(self.device)
                 #batch_y_mark = batch_y_mark.float().to(self.device)
 
                 # decoder input
-                dec_inp = torch.zeros_like(batch_y[:, -self.args.pred_len:, :]).float()
-                dec_inp = torch.cat([batch_y[:, :self.args.label_len, :], dec_inp], dim=1).float().to(self.device)
+                dec_inp = torch.zeros_like(batch_x[:, -self.args.pred_len:, :]).float()
+                dec_inp = torch.cat([batch_x[:, :self.args.label_len, :], dec_inp], dim=1).float().to(self.device)
+
                 # encoder - decoder
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
@@ -65,9 +67,9 @@ class Exp_Stock_predict_upordown(Exp_Basic):
                         outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
                     else:
                         outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-                f_dim = -1 if self.args.features == 'MS' else 0
-                outputs = outputs[:, -self.args.pred_len:, f_dim:]
-                batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
+                #f_dim = -1 if self.args.features == 'MS' else 0
+                #outputs = outputs[:, -self.args.pred_len:, f_dim:]
+                #batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
 
                 pred = outputs.detach().cpu()
                 true = batch_y.detach().cpu()
@@ -80,7 +82,7 @@ class Exp_Stock_predict_upordown(Exp_Basic):
         return total_loss
 
     def train(self, setting):
-        import pdb; pdb.set_trace()
+        #import pdb; pdb.set_trace()
         train_data, train_loader = self._get_data(flag='train')
         vali_data, vali_loader = self._get_data(flag='val')
         test_data, test_loader = self._get_data(flag='test')
@@ -111,15 +113,16 @@ class Exp_Stock_predict_upordown(Exp_Basic):
                 iter_count += 1
                 model_optim.zero_grad()
                 batch_x = batch_x.float().to(self.device)
-                batch_y = batch_y.float().to(self.device)
+                #batch_y = batch_y.float().to(self.device)
+                batch_y = batch_y.long().to(self.device)
                 batch_x_mark = None
                 batch_y_mark = None
                 #batch_x_mark = batch_x_mark.float().to(self.device)
                 #batch_y_mark = batch_y_mark.float().to(self.device)
 
                 # decoder input
-                dec_inp = torch.zeros_like(batch_y[:, -self.args.pred_len:, :]).float()
-                dec_inp = torch.cat([batch_y[:, :self.args.label_len, :], dec_inp], dim=1).float().to(self.device)
+                dec_inp = torch.zeros_like(batch_x[:, -self.args.pred_len:, :]).float()
+                dec_inp = torch.cat([batch_x[:, :self.args.label_len, :], dec_inp], dim=1).float().to(self.device)
 
                 # encoder - decoder
                 if self.args.use_amp:
@@ -140,9 +143,9 @@ class Exp_Stock_predict_upordown(Exp_Basic):
                     else:
                         outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
 
-                    f_dim = -1 if self.args.features == 'MS' else 0
-                    outputs = outputs[:, -self.args.pred_len:, f_dim:]
-                    batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
+                    #f_dim = -1 if self.args.features == 'MS' else 0
+                    #outputs = outputs[:, -self.args.pred_len:, f_dim:]
+                    #batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
                     loss = criterion(outputs, batch_y)
                     train_loss.append(loss.item())
 
@@ -184,6 +187,7 @@ class Exp_Stock_predict_upordown(Exp_Basic):
         return self.model
 
     def test(self, setting, test=0):
+        import pdb; pdb.set_trace()
         test_data, test_loader = self._get_data(flag='test')
         if test:
             print('loading model')
@@ -200,14 +204,17 @@ class Exp_Stock_predict_upordown(Exp_Basic):
             #for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(test_loader):
             for i, (batch_x, batch_y) in enumerate(test_loader):
                 batch_x = batch_x.float().to(self.device)
-                batch_y = batch_y.float().to(self.device)
-
+                #batch_y = batch_y.float().to(self.device)
+                batch_y = batch_y.long().to(self.device)
                 batch_x_mark = None
                 batch_y_mark = None
+                #batch_x_mark = batch_x_mark.float().to(self.device)
+                #batch_y_mark = batch_y_mark.float().to(self.device)
 
                 # decoder input
-                dec_inp = torch.zeros_like(batch_y[:, -self.args.pred_len:, :]).float()
-                dec_inp = torch.cat([batch_y[:, :self.args.label_len, :], dec_inp], dim=1).float().to(self.device)
+                dec_inp = torch.zeros_like(batch_x[:, -self.args.pred_len:, :]).float()
+                dec_inp = torch.cat([batch_x[:, :self.args.label_len, :], dec_inp], dim=1).float().to(self.device)
+
                 # encoder - decoder
                 if self.args.use_amp:
                     with torch.cuda.amp.autocast():
@@ -222,9 +229,9 @@ class Exp_Stock_predict_upordown(Exp_Basic):
                     else:
                         outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
 
-                f_dim = -1 if self.args.features == 'MS' else 0
-                outputs = outputs[:, -self.args.pred_len:, f_dim:]
-                batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
+                #f_dim = -1 if self.args.features == 'MS' else 0
+                #outputs = outputs[:, -self.args.pred_len:, f_dim:]
+                #batch_y = batch_y[:, -self.args.pred_len:, f_dim:].to(self.device)
                 outputs = outputs.detach().cpu().numpy()
                 batch_y = batch_y.detach().cpu().numpy()
                 #if test_data.scale and self.args.inverse:
@@ -237,20 +244,20 @@ class Exp_Stock_predict_upordown(Exp_Basic):
 
                 preds.append(pred)
                 trues.append(true)
-                if i % 200 == 0:
-                    input = batch_x.detach().cpu().numpy()
-                    #if test_data.scale and self.args.inverse:
-                    #    shape = input.shape
-                    #    input = test_data.inverse_transform(input.squeeze(0)).reshape(shape)
-                    gt = np.concatenate((input[0, :, -1], true[0, :, -1]), axis=0)
-                    pd = np.concatenate((input[0, :, -1], pred[0, :, -1]), axis=0)
-                    visual(gt, pd, os.path.join(folder_path, str(i) + '.pdf'))
+                #if i % 200 == 0:
+                #    input = batch_x.detach().cpu().numpy()
+                #    #if test_data.scale and self.args.inverse:
+                #    #    shape = input.shape
+                #    #    input = test_data.inverse_transform(input.squeeze(0)).reshape(shape)
+                #    gt = np.concatenate((input[0, :, -1], true[0, :, -1]), axis=0)
+                #    pd = np.concatenate((input[0, :, -1], pred[0, :, -1]), axis=0)
+                #    visual(gt, pd, os.path.join(folder_path, str(i) + '.pdf'))
 
         preds = np.array(preds)
         trues = np.array(trues)
         print('test shape:', preds.shape, trues.shape)
-        preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
-        trues = trues.reshape(-1, trues.shape[-2], trues.shape[-1])
+        preds = preds.reshape(-1, preds.shape[-1])
+        trues = trues.reshape(-1, 1)
         print('test shape:', preds.shape, trues.shape)
 
         # result save
@@ -258,16 +265,16 @@ class Exp_Stock_predict_upordown(Exp_Basic):
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
-        mae, mse, rmse, mape, mspe = metric(preds, trues)
-        print('mse:{}, mae:{}'.format(mse, mae))
-        f = open("result_long_term_forecast.txt", 'a')
-        f.write(setting + "  \n")
-        f.write('mse:{}, mae:{}'.format(mse, mae))
-        f.write('\n')
-        f.write('\n')
-        f.close()
+        #mae, mse, rmse, mape, mspe = metric(preds, trues)
+        #print('mse:{}, mae:{}'.format(mse, mae))
+        #f = open("result_long_term_forecast.txt", 'a')
+        #f.write(setting + "  \n")
+        #f.write('mse:{}, mae:{}'.format(mse, mae))
+        #f.write('\n')
+        #f.write('\n')
+        #f.close()
 
-        np.save(folder_path + 'metrics.npy', np.array([mae, mse, rmse, mape, mspe]))
+        #np.save(folder_path + 'metrics.npy', np.array([mae, mse, rmse, mape, mspe]))
         np.save(folder_path + 'pred.npy', preds)
         np.save(folder_path + 'true.npy', trues)
 
